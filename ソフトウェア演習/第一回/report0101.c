@@ -8,7 +8,7 @@ int main(void)
     FILE *fp;
     char moji;
     int str;
-    char fig_char[FIGURE_N];
+    char fig_char[FIGURE_N + 1];
     int counter[FIGURE_N] = {0};
     int i = 0;
 
@@ -56,10 +56,7 @@ int main(void)
         //結果出力
         for (i = 0; fig_char[i] != '\0'; i++)
         {
-            if (counter[i] != 0)
-            {
-                printf("\"%c\"=%d\n", fig_char[i], counter[i]);
-            }
+            printf("\"%c\"=%d\n", fig_char[i], counter[i]);
         }
     }
 
