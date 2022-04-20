@@ -46,7 +46,10 @@ int main(void)
             {
                 if (str == fig_char[i])
                 {
-                    counter[i]++;
+                    if (!(fig_char[i] >= '0' && fig_char[i] <= '9'))
+                    {
+                        counter[i]++;
+                    }
                 }
             }
         }
