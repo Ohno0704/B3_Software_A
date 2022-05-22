@@ -1,0 +1,220 @@
+/*
+科目：ソフトウェア演習Ⅰa
+学籍番号・氏名：B201809・大野　裕之
+課題番号：課題3-1
+提出日：2022年5月16日
+使用Cコンパイラ：gcc version 9.2.0
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX_SIZE 128
+
+//データの特徴次元毎の平均からなる平均ベクトル
+double *get_mean(int ndim, double **data, int ndata);
+//特徴次元間の分散共分散行列
+double **get_cova(int ndim, double **data, int ndata);
+
+//多次元配列の動的確保
+double **get_matrix(int col, int row);
+//多次元メモリ解放
+void free_matrix(double **ptri, int col, int row);
+
+//文字列をスペースで分割
+void strdiv(char *str, double *str_no);
+
+int main(void)
+{
+
+    FILE *fp;
+    char fname[] = "A01M0007-0007.dat";
+
+    //ファイルオープン
+    fp = fopen(fname, "r");
+    if ((fp = fopen(fname, "r")) == NULL)
+    {
+        printf("File open Error\n");
+        return 0;
+    }
+
+    char str[MAX_SIZE];
+    int nframe; //フレームの数
+    int ndim;   //各フレームの次元数
+    fgets(str, MAX_SIZE, fp);
+    sscanf(str, "%d %d", &nframe, &ndim);
+
+    //行列の生成
+    double **matrix = get_matrix(nframe, ndim);
+
+    int row = 0; //行
+    double no[ndim];
+    int count_str_no = 0;
+    int count;
+
+    //一行ずつ読み取り
+    while (fgets(str, MAX_SIZE, fp) != NULL)
+    {
+        strdiv(str, no);
+        for (int col = 0; col < ndim; col++)
+        {
+            matrix[row][col] = no[col];
+        }
+        row++;
+    }
+
+    //平均ベクトル
+    double *mean = get_mean(ndim, matrix, nframe);
+    //平均ベクトル表示
+    printf("mean vector\n");
+    for (int i = 0; i < ndim; i++)
+    {
+        printf("%lf\n", mean[i]);
+    }
+    free(mean); //メモリの解放
+
+    //分散共分散行列
+    double **cova = get_cova(ndim, matrix, nframe);
+    //分散共分散行列
+    printf("\nvariarance covariance matrix\n");
+    for (int i = 0; i < ndim; i++)
+    {
+        for (int j = 0; j < ndim; j++)
+        {
+            printf("%lf ", cova[i][j]);
+        }
+        printf("\n");
+    }
+    free_matrix(cova, nframe, nframe);
+
+    //メモリの解放
+    free_matrix(matrix, nframe, ndim);
+
+    //ファイルを閉じる
+    fclose(fp);
+}
+
+double *get_mean(int ndim, double **data, int ndata)
+{
+    double *mean; //平均ベクトル
+
+    //メモリの確保
+    mean = (double *)malloc(ndata * sizeof(double));
+    if (mean == NULL)
+    {
+        perror("failed to allocate");
+    }
+
+    //平均ベクトル計算
+    for (int i = 0; i < ndim; i++)
+    {
+        mean[i] = 0;
+        for (int j = 0; j < ndata; j++)
+        {
+            mean[i] += data[j][i];
+        }
+        mean[i] = mean[i] / ndata;
+    }
+    return mean;
+}
+
+double **get_cova(int ndim, double **data, int ndata)
+{
+    double **cova = get_matrix(ndata, ndata);   //分散共分散行列
+    double *mean = get_mean(ndim, data, ndata); //平均ベクトル
+    for (int i = 0; i < ndim; i++)
+    {
+        for (int j = 0; j < ndim; j++)
+        {
+            for (int n = 0; n < ndata; n++)
+            {
+                cova[i][j] += ((data[n][i] - mean[i]) * (data[n][j] - mean[j])) / ndata;
+            }
+        }
+    }
+    free(mean);
+    return cova;
+}
+
+//多次元配列の動的確保
+double **get_matrix(int col, int row)
+{
+    double **ptri;
+    ptri = (double **)malloc(col * sizeof(double *));
+
+    if (ptri == NULL)
+    {
+        perror("failed to allocate");
+    }
+    for (int i = 0; i < col; i++)
+    {
+        ptri[i] = (double *)malloc(row * sizeof(double));
+        if (ptri[i] == NULL)
+        {
+            perror("failed to allocate");
+        }
+    }
+    return ptri;
+}
+
+//メモリ解放
+void free_matrix(double **ptri, int col, int row)
+{
+    for (int i = 0; i < col; i++)
+    {
+        free(ptri[i]);
+    }
+    free(ptri);
+}
+
+//文字列をスペースで分割
+void strdiv(char *str, double *no)
+{
+    char temp[MAX_SIZE];
+    int count = 0;
+    int j = 0;
+    for (int i = 0; str[i] != '\0'; i++)
+    {
+        if (str[i] == ' ' || str[i] == '\n')
+        {
+            no[count++] = atof(temp);
+            j = 0;
+            // tempを初期化
+            memset(temp, '\0', strlen(temp));
+        }
+        else
+        {
+            temp[j++] = str[i];
+        }
+    }
+}
+
+/*
+実行結果
+PS C:\Users\ono_0\Documents\B3\前期\ソフトウェア演習\No.3> gcc report0301.c -o report0301
+PS C:\Users\ono_0\Documents\B3\前期\ソフトウェア演習\No.3> ./report0301
+mean vector
+-0.000014
+-0.000001
+-0.000018
+-0.000009
+-0.000012
+0.000000
+-0.000015
+-0.000000
+0.000006
+-0.000004
+
+variarance covariance matrix
+29.431324 -5.025587 2.005196 -21.295439 -15.806846 8.677714 -5.474325 -3.670951 -9.022653 -1.762498
+-5.025587 47.686228 2.810142 12.495066 16.664772 14.129448 23.788095 -16.657507 -14.308402 3.179601
+2.005196 2.810142 46.322844 21.025262 -27.958765 -5.785768 -11.688003 12.296703 -1.795753 -14.474213
+-21.295439 12.495066 21.025262 86.918294 27.923627 -25.795114 9.137526 8.794512 13.922046 12.330206
+-15.806846 16.664772 -27.958765 27.923627 92.341439 3.414691 22.661727 -0.295393 13.878921 32.496726
+8.677714 14.129448 -5.785768 -25.795114 3.414691 65.100650 19.774264 -22.028061 -10.369529 2.569036
+-5.474325 23.788095 -11.688003 9.137526 22.661727 19.774264 74.811341 -11.726446 -2.255973 -0.155340
+-3.670951 -16.657507 12.296703 8.794512 -0.295393 -22.028061 -11.726446 65.449316 18.735012 0.063330
+-9.022653 -14.308402 -1.795753 13.922046 13.878921 -10.369529 -2.255973 18.735012 59.501617 0.669178
+-1.762498 3.179601 -14.474213 12.330206 32.496726 2.569036 -0.155340 0.063330 0.669178 42.746026 
+*/
