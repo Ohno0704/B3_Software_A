@@ -1,0 +1,3 @@
+Nomber of "Alice"is	395
+Nomber of "wonder"is	28
+Nomber of "self"is	120
