@@ -1,0 +1,189 @@
+/*
+科目：ソフトウェア演習Ⅰa
+学籍番号・氏名：B201809・大野　裕之
+課題番号：課題5-1
+提出日：2022年5月29日
+使用Cコンパイラ：gcc version 9.2.0
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+//リスト要素数の範囲
+#define N_max 100
+#define N_min 3
+
+//RGB値の範囲
+#define RGB_max 1.0
+#define RGB_min 0.0
+
+//ベクトル値の範囲
+#define XY_max 550.0
+#define XY_min 50.0
+
+//座標ベクトル
+typedef struct vector{
+    double x;   //x座標
+    double y;   //y座標
+}VECTOR;
+
+//三角形
+typedef struct Triangle { 
+    VECTOR v[3];            //座標
+    double R,G,B;           //色
+    struct Triangle *next;  //次のリストを指すポインタ
+}TRIANGLE;
+
+//指定範囲のランダム(返り値:double)
+double randrange(double max,double min){
+    return rand()/(RAND_MAX/(max-min))+min;
+}
+
+//ランダム値で初期化したリスト生成
+TRIANGLE *MakeTriList(int N){
+    if(N>0){
+        TRIANGLE *node=(TRIANGLE*)malloc(sizeof(TRIANGLE));
+        //ベクトル
+        for(int i=0;i<3;i++){
+            node->v[i].x = randrange(XY_max,XY_min);
+            node->v[i].y = randrange(XY_max,XY_min);
+        }
+        
+        //色
+        node->R = randrange(RGB_max,RGB_min);
+        node->G = randrange(RGB_max,RGB_min);
+        node->B = randrange(RGB_max,RGB_min);
+
+        //次のノードへ
+        node->next = MakeTriList(N-1);
+
+        return node;
+    }
+    return NULL; 
+}
+
+//三角形をPS出力
+void TrianglePrint(FILE *fp,TRIANGLE *node){
+    
+    if (node != NULL){
+        
+        //新しい描画セット
+        fprintf(fp,"newpath\n");
+
+        //色指定
+        fprintf(fp,"%f %f %f setrgbcolor\n",node->R,node->G,node->B);
+
+        //線の描写
+        fprintf(fp,"%f %f moveto\n",node->v[0].x,node->v[0].y);
+        fprintf(fp,"%f %f lineto\n",node->v[1].x,node->v[1].y);
+        fprintf(fp,"%f %f lineto\n",node->v[2].x,node->v[2].y);
+        fprintf(fp,"closepath\n");
+
+        //描写終了
+        fprintf(fp,"stroke\n");
+
+        //次へ移動
+        TrianglePrint(fp,node->next);
+    }
+}
+
+//メモリ解放
+int FreeList(TRIANGLE *node){
+    if (node != NULL){
+        FreeList(node->next);
+        free(node);
+    }
+    return 0;
+}
+
+int main(void){
+
+    // 時間による乱数系列の変更 
+    srand((unsigned)time(NULL));
+
+    //リスト作成
+    double N = randrange((double)N_max,(double)N_min);
+    TRIANGLE *top = MakeTriList((int)N);
+    
+    //ファイルの生成
+    FILE *fp;                   //FILE型構造体
+    char fname[] = "output.ps"; //出力ファイル
+    fp = fopen(fname,"w");
+    if(fp == NULL) {
+		printf("%s file not make!\n", fname);
+		return -1;
+    }
+    
+    //三角形リストをファイルに出力
+    TrianglePrint(fp,top);
+    
+    //メモリ解放
+    FreeList(top);
+
+    //ファイルを閉じる
+    fclose(fp);
+}
+
+/*
+実行結果
+PS C:\Users\ono_0\Documents\B3\前期\ソフトウェア演習\No.5> gcc report0501.c -o report0501
+PS C:\Users\ono_0\Documents\B3\前期\ソフトウェア演習\No.5> ./report0501
+以下「output.ps」内
+newpath
+0.940550 0.014710 0.081942 setrgbcolor
+143.935972 406.807154 moveto
+151.336711 367.896054 lineto
+469.064913 359.091464 lineto
+closepath
+stroke
+newpath
+0.240638 0.435957 0.757347 setrgbcolor
+185.120701 178.727073 moveto
+536.526078 197.068697 lineto
+514.400159 413.368633 lineto
+closepath
+stroke
+newpath
+0.845058 0.174474 0.722159 setrgbcolor
+157.684561 371.298868 moveto
+176.728111 227.083651 lineto
+509.807123 109.099094 lineto
+closepath
+stroke
+newpath
+0.124882 0.737632 0.177801 setrgbcolor
+436.776330 114.699240 moveto
+175.949889 376.761681 lineto
+361.609241 172.440260 lineto
+closepath
+stroke
+newpath
+0.945921 0.119510 0.359966 setrgbcolor
+256.060976 237.124241 moveto
+51.922666 316.731773 lineto
+195.237587 389.350566 lineto
+closepath
+stroke
+newpath
+0.209601 0.315897 0.954466 setrgbcolor
+446.908475 154.846339 moveto
+430.306406 230.028687 lineto
+230.639058 445.245216 lineto
+closepath
+stroke
+newpath
+0.648793 0.847102 0.673635 setrgbcolor
+310.734886 453.653066 moveto
+142.043825 183.228553 lineto
+117.186499 262.698752 lineto
+closepath
+stroke
+newpath
+0.310282 0.982299 0.941557 setrgbcolor
+224.535356 99.562059 moveto
+197.419660 322.682882 lineto
+177.491073 209.993286 lineto
+closepath
+stroke
+*/
